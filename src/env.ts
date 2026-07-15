@@ -23,7 +23,10 @@ const serverSchema = z
         32,
         "AUTH_SECRET must be at least 32 characters (run: openssl rand -base64 32)",
       ),
-    GROQ_API_KEY: z.string().min(1, "GROQ_API_KEY is required for AI features"),
+    // Optional: the app (auth + CRUD) must boot without it. AI features check
+    // for it lazily and fail gracefully when it's absent — a missing AI key
+    // should never break authentication or the database.
+    GROQ_API_KEY: z.string().optional(),
     GROQ_MODEL: z.string().default("llama-3.3-70b-versatile"),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   })

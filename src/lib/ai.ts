@@ -2,14 +2,26 @@ import { createGroq } from "@ai-sdk/groq";
 import { generateObject, streamText } from "ai";
 import { z } from "zod";
 
+import { serverEnv } from "@/env";
+import { AppError } from "@/lib/errors";
+
 /** Minimal message shape accepted by the model (avoids SDK type churn). */
 export type ChatTurn = { role: "user" | "assistant"; content: string };
 
-import { serverEnv } from "@/env";
-
-/** Lazily-created Groq provider bound to the validated API key. */
+/**
+ * Lazily-created Groq provider. Throws a clear, user-facing error only when an
+ * AI call is actually attempted without a configured key — so the rest of the
+ * app keeps working when GROQ_API_KEY is absent.
+ */
 function model() {
   const env = serverEnv();
+  if (!env.GROQ_API_KEY) {
+    throw new AppError(
+      "AI features are not configured yet. Set GROQ_API_KEY to enable analysis and chat.",
+      503,
+      "ai_unconfigured",
+    );
+  }
   const groq = createGroq({ apiKey: env.GROQ_API_KEY });
   return groq(env.GROQ_MODEL);
 }
